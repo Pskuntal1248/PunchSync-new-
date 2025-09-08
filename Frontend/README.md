@@ -80,6 +80,4 @@ This frontend connects to a Spring Boot backend running on port 8080 with the fo
 
 **Parth Singh** - Full Stack Developer
 
----
 
-*Built with ❤️ using Next.js and modern web technologies*

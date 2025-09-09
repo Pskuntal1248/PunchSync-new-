@@ -131,12 +131,108 @@ export default function PunchSyncPro() {
   }
 
   const renderCharts = () => {
-    if (!reportData || !reportData.sites) return null
+    if (!reportData) return null
 
-    const sites = reportData.sites
+    // Handle Attendance Summary
+    if (selectedReportType === "attendance-summary" && reportData.shiftCalculations) {
+      const shiftData = reportData.shiftCalculations["8-Hour Shift"] || reportData.shiftCalculations["9-Hour Shift"]
+      if (!shiftData || !shiftData.sites) return null
 
-    // Muster Roll Charts
-    if (selectedReportType === "muster-roll") {
+      const sites = shiftData.sites
+      const summaries = shiftData.summaries
+
+      // Site-wise summary data
+      const siteSummaryData = Object.keys(summaries).map((siteName) => ({
+        site: siteName.length > 12 ? siteName.substring(0, 12) + "..." : siteName,
+        totalHours: parseFloat(summaries[siteName].totalHours) || 0,
+        totalOvertime: parseFloat(summaries[siteName].totalOvertimeHours) || 0,
+        totalDutyUnits: parseFloat(summaries[siteName].totalDutyUnits) || 0,
+        totalFullDays: summaries[siteName].totalFullDays || 0,
+        totalMissing: summaries[siteName].totalMissingDays || 0,
+      }))
+
+      // Employee overtime data
+      const employeeOvertimeData = []
+      Object.keys(sites).forEach((siteName) => {
+        const employees = sites[siteName]
+        employees.forEach((emp: any) => {
+          employeeOvertimeData.push({
+            name: emp.name.length > 15 ? emp.name.substring(0, 15) + "..." : emp.name,
+            overtime: parseFloat(emp.overtimeHours) || 0,
+            site: siteName,
+            fullDays: emp.fullDays || 0,
+            halfDays: emp.halfDays || 0,
+          })
+        })
+      })
+
+      // Sort by overtime descending
+      employeeOvertimeData.sort((a, b) => b.overtime - a.overtime)
+
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Site-wise Duty & Overtime</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={siteSummaryData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="site" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="totalDutyUnits" fill="#10b981" name="Total Duty Units" />
+                    <Bar dataKey="totalOvertime" fill="#f59e0b" name="Overtime Hours" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Site Performance Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={siteSummaryData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="site" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="totalFullDays" fill="#10b981" name="Full Days" />
+                    <Bar dataKey="totalMissing" fill="#ef4444" name="Missing Days" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Top Overtime Performers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={employeeOvertimeData.slice(0, 15)} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="name" type="category" width={120} />
+                  <Tooltip />
+                  <Bar dataKey="overtime" fill="#f59e0b" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // Handle Muster Roll
+    if (selectedReportType === "muster-roll" && reportData.sites) {
+      const sites = reportData.sites
+
       // Employee attendance data
       const employeeAttendanceData = []
       const statusDistribution = { Present: 0, Absent: 0, HalfDay: 0, Missing: 0, WeekOff: 0 }
@@ -259,8 +355,9 @@ export default function PunchSyncPro() {
       )
     }
 
-    // Daily Work & Attendance Summary Charts
-    if (selectedReportType === "daily-work" || selectedReportType === "attendance-summary") {
+    // Handle Daily Work
+    if (selectedReportType === "daily-work" && reportData.sites) {
+      const sites = reportData.sites
       const employeeOvertimeData = []
       const siteDutyData = []
       const dailyTrendData = []

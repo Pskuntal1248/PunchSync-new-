@@ -1,14 +1,25 @@
 package com.Shreejifacilities.report_generator.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
-
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class DailyWorkService {
@@ -176,7 +187,6 @@ public class DailyWorkService {
         for(int i=0; i < headers.length; i++) sheet.autoSizeColumn(i);
     }
 
-    // All other private helper methods below are unchanged
     private Map<String, Map<String, Map<String, List<Punch>>>> readAndGroupPunches(InputStream inputStream, int reportYear, int reportMonth) throws Exception {
         List<Punch> allPunches = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -217,7 +227,12 @@ public class DailyWorkService {
         }
         return siteData;
     }
-    private String getCellStringValue(Cell cell) { if (cell == null) return ""; return cell.getCellType() == CellType.NUMERIC ? String.valueOf((long) cell.getNumericCellValue()) : cell.getStringCellValue().trim(); }
+    
+    private String getCellStringValue(Cell cell) { 
+        if (cell == null) return ""; 
+        return cell.getCellType() == CellType.NUMERIC ? String.valueOf((long) cell.getNumericCellValue()) : cell.getStringCellValue().trim(); 
+    }
+    
     private Date getCellDateValue(Cell cell) {
         if (cell == null) return null;
         if (DateUtil.isCellDateFormatted(cell)) return cell.getDateCellValue();
@@ -230,9 +245,44 @@ public class DailyWorkService {
         }
         return null;
     }
-    private String formatDataAsJson(Map<String, Object> data) { /* ... same as other services ... */ return "";} // Placeholder for brevity
-    private void createCell(Row r, int c, String v, CellStyle s) { Cell cell = r.createCell(c); cell.setCellValue(v); if (s != null) cell.setCellStyle(s); }
-    private void createCell(Row r, int c, double v, CellStyle s) { Cell cell = r.createCell(c); cell.setCellValue(v); if (s != null) cell.setCellStyle(s); }
-    private CellStyle createHeaderStyle(Workbook wb) { XSSFFont f = (XSSFFont) wb.createFont(); f.setBold(true); f.setColor(IndexedColors.WHITE.getIndex()); CellStyle s = wb.createCellStyle(); s.setFont(f); s.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex()); s.setFillPattern(FillPatternType.SOLID_FOREGROUND); s.setAlignment(HorizontalAlignment.CENTER); return s; }
-    private CellStyle createTotalLabelStyle(Workbook wb) { XSSFFont f = (XSSFFont) wb.createFont(); f.setBold(true); CellStyle s = wb.createCellStyle(); s.setFont(f); return s; }
+    
+  
+    private String formatDataAsJson(Map<String, Object> data) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+          
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(data);
+        } catch (Exception e) {
+           
+            throw new RuntimeException("Error converting data to JSON", e);
+        }
+    }
+    
+    private void createCell(Row r, int c, String v, CellStyle s) { 
+        Cell cell = r.createCell(c); cell.setCellValue(v); if (s != null) cell.setCellStyle(s); 
+    }
+    
+    private void createCell(Row r, int c, double v, CellStyle s) { 
+        Cell cell = r.createCell(c); cell.setCellValue(v); if (s != null) cell.setCellStyle(s); 
+    }
+    
+    private CellStyle createHeaderStyle(Workbook wb) { 
+        XSSFFont f = (XSSFFont) wb.createFont(); 
+        f.setBold(true); 
+        f.setColor(IndexedColors.WHITE.getIndex()); 
+        CellStyle s = wb.createCellStyle(); 
+        s.setFont(f); 
+        s.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex()); 
+        s.setFillPattern(FillPatternType.SOLID_FOREGROUND); 
+        s.setAlignment(HorizontalAlignment.CENTER); 
+        return s; 
+    }
+    
+    private CellStyle createTotalLabelStyle(Workbook wb) { 
+        XSSFFont f = (XSSFFont) wb.createFont(); 
+        f.setBold(true); 
+        CellStyle s = wb.createCellStyle(); 
+        s.setFont(f); 
+        return s; 
+    }
 }

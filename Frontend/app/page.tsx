@@ -98,7 +98,8 @@ export default function PunchSyncPro() {
       formData.append("year", selectedYear)
       formData.append("month", selectedMonth)
 
-      const endpoint = `http://localhost:8080/api/reports/${selectedReportType}/${format}`
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const endpoint = `${apiUrl}/api/reports/${selectedReportType}/${format}`
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
